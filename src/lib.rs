@@ -1,6 +1,6 @@
 pub mod buffer;
 pub mod default_generator;
-pub mod dao;
+pub mod metadata_storage;
 pub mod allocator;
 
 
@@ -18,7 +18,6 @@ pub trait UidGenerator {
 
 #[derive(Debug, Default)]
 pub struct DisposableWorkerIdAssigner {
-
 }
 
 impl DisposableWorkerIdAssigner {

@@ -1,6 +1,6 @@
 use crate::StringResult;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct BitsAllocator {
     /**
      * Bits for [sign-> second-> workId-> sequence]
