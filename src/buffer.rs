@@ -7,12 +7,12 @@ trait BufferedUidProvider {
     fn provide(moment_in_second: i64);
 }
 
-trait RejectedPutBufferHandler<const T: usize> {
+pub trait RejectedPutBufferHandler<const T: usize> {
     fn reject_put_buffer(&self, ring_buffer: &RingBuffer<T>, uid: i64);
 }
 
 
-struct DefaultRejectedPutBufferHandler;
+pub struct DefaultRejectedPutBufferHandler;
 
 
 impl<const T: usize> RejectedPutBufferHandler<T> for DefaultRejectedPutBufferHandler {
@@ -24,11 +24,11 @@ impl<const T: usize> RejectedPutBufferHandler<T> for DefaultRejectedPutBufferHan
 unsafe impl Send for DefaultRejectedPutBufferHandler {}
 unsafe impl Sync for DefaultRejectedPutBufferHandler {}
 
-trait RejectedTakeBufferHandler<const T: usize> {
+pub trait RejectedTakeBufferHandler<const T: usize> {
     fn reject_take_buffer(&self, ring_buffer: &RingBuffer<T>);
 }
 
-struct DefaultRejectedTakeBufferHandler;
+pub struct DefaultRejectedTakeBufferHandler;
 
 impl<const T: usize> RejectedTakeBufferHandler<T> for DefaultRejectedTakeBufferHandler {
     fn reject_take_buffer(&self, ring_buffer: &RingBuffer<T>) {
@@ -157,6 +157,11 @@ impl<const buffer_size: usize> RingBuffer<buffer_size> {
     fn cal_slot_index(&self, sequence: i64) -> i64 {
         sequence & self.index_mask
     }
+
+
+    pub fn init_buffer(&mut self) -> StringResult<()>{
+        Ok(())
+    }
 }
 
 impl <const T: usize>Display for  RingBuffer<T>{
@@ -167,7 +172,7 @@ impl <const T: usize>Display for  RingBuffer<T>{
 }
 
 
-struct BufferPaddingExecutor {}
+pub struct BufferPaddingExecutor {}
 
 
 impl BufferPaddingExecutor {
