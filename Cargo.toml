@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 log = "0.4.17"
 chrono = { version = "0.4", features = ["unstable-locales"] }
+threadpool="1.8.1"
+job_scheduler="1.2.1"

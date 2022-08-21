@@ -1,18 +1,18 @@
 use chrono::{DateTime, Local};
+use job_scheduler::{Job, JobScheduler};
 use log::info;
 use crate::allocator::BitsAllocator;
-use crate::buffer::{BufferPaddingExecutor, RejectedPutBufferHandler, RejectedTakeBufferHandler, RingBuffer};
+use crate::buffer::{RejectedPutBufferHandler, RejectedTakeBufferHandler, RingBuffer};
 use crate::default_generator::{InteriorDefaultUidGenerator};
 use crate::{DisposableWorkerIdAssigner, StringResult, UidGenerator};
 
-struct CacheUidGenerator<const buffer_size: usize> {
+struct CacheUidGenerator<'a, const buffer_size: usize> {
     boost_power: i32,
     padding_factor: i32,
     schedule_interval: Option<i64>,
     rejected_put_buffer_handler: Box<dyn RejectedPutBufferHandler<buffer_size>>,
     rejected_take_buffer_handler: Box<dyn RejectedTakeBufferHandler<buffer_size>>,
     ring_buffer: RingBuffer<buffer_size>,
-    buffer_padding_executor: BufferPaddingExecutor,
     time_bits: i32,
     worker_bits: i32,
     seq_bits: i32,
@@ -23,14 +23,15 @@ struct CacheUidGenerator<const buffer_size: usize> {
     worker_id: i64,
     sequence: i64,
     last_second: i64,
-
     worker_id_assigner: DisposableWorkerIdAssigner,
+    job_scheduler: JobScheduler<'a>,
+
 }
 
 
 
 
-impl <const buffer_size: usize>CacheUidGenerator<buffer_size> {
+impl <'a, const buffer_size: usize>CacheUidGenerator<'a, buffer_size> {
     const DEFAULT_BOOST_POWER: i32 = 3;
 
 
@@ -52,7 +53,21 @@ impl <const buffer_size: usize>CacheUidGenerator<buffer_size> {
     }
 
 
-    fn next_ids_for_one_second(&self, current_second: i64) -> Vec<i64>{
+    pub fn init_buffer(&mut self) {
+        // let buffer_size = (self.bits_allocator.max_sequence() + 1) << self.boost_power;
+        self.ring_buffer = RingBuffer::<buffer_size>::from(50).unwrap();
+        info!("Initialized ring buffer size:{}, paddingFactor:{}", buffer_size, self.padding_factor);
+        // 填充buffer
+    }
+
+    pub fn init_job_scheduler(&mut self) {
+        self.job_scheduler = JobScheduler::new();
+        self.job_scheduler.add(Job::new("1/10 * * * * *".parse().unwrap(), || {
+            println!("job test")
+        }));
+    }
+
+    fn next_ids_for_one_second(&self, current_second: i64) -> Vec<i64> {
         let size = self.bits_allocator.max_sequence() + 1;
         let mut uids = Vec::with_capacity(size as usize);
 
@@ -65,7 +80,8 @@ impl <const buffer_size: usize>CacheUidGenerator<buffer_size> {
 
 }
 
-impl <const buffer_size: usize>UidGenerator for CacheUidGenerator<buffer_size> {
+
+impl <'a, const buffer_size: usize>UidGenerator for CacheUidGenerator<'a, buffer_size> {
     fn get_uid(&mut self) -> StringResult<i64> {
         match self.ring_buffer.take() {
             None => {
